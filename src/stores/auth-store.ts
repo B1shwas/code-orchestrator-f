@@ -24,6 +24,15 @@ interface AuthState {
   beginLogin: () => Promise<string>;
   /** Store the LoginResponse (from the backend callback) as the session. */
   setSession: (login: LoginResponse) => void;
+  /**
+   * Complete the OAuth round-trip from the /auth/callback page.
+   * The backend redirects to /auth/callback?accessToken=<jwt>&user=<json?>;
+   * when user is absent we fetch GET /auth/me with the token.
+   */
+  hydrateFromCallback: (
+    accessToken: string,
+    user: UserProfile | null,
+  ) => Promise<void>;
   /** GET /auth/me — hydrate user on app boot when a session exists. */
   loadUser: () => Promise<void>;
   /** POST /auth/logout + discard JWT client-side. */
@@ -62,6 +71,34 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       sessionExpired: false,
       error: null,
     });
+  },
+
+  hydrateFromCallback: async (accessToken, user) => {
+    setAccessToken(accessToken);
+    if (user) {
+      set({
+        user,
+        status: "authenticated",
+        sessionExpired: false,
+        error: null,
+      });
+      return;
+    }
+    try {
+      const me = await fetchCurrentUser();
+      set({
+        user: me,
+        status: "authenticated",
+        sessionExpired: false,
+        error: null,
+      });
+    } catch (error) {
+      // 401 flows through handleUnauthorized via the interceptor.
+      if (!get().sessionExpired) {
+        set({ user: null, status: "anonymous", error: error as ApiError });
+      }
+      throw error;
+    }
   },
 
   loadUser: async () => {

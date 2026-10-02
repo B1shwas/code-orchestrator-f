@@ -12,6 +12,7 @@ export interface ApiError {
   error: string;
 }
 
+// ---------------- auth ----------------
 export interface UserProfile {
   id: string;
   githubId: string;
@@ -21,15 +22,15 @@ export interface UserProfile {
 }
 
 export interface AuthUrlResponse {
-  url: string;
-  state: string;
-  expiresIn: string;
+  url: string; // redirect the user here (GitHub OAuth)
+  state: string; // 10-min TTL, echoed via callback
+  expiresIn: string; // "10m"
 }
 
 export interface LoginResponse {
-  accessToken: string;
+  accessToken: string; // app JWT — store in memory, send as Bearer
   tokenType: "Bearer";
-  expiresIn: string;
+  expiresIn: string; // "7d"
   user: UserProfile;
 }
 
@@ -42,6 +43,7 @@ export interface LogoutResponse {
 // GET /api/v1/auth/me -> UserProfile
 // POST /api/v1/auth/logout -> { ok: true }  (stateless: client discards JWT)
 
+// ---------------- repositories ----------------
 export type RepoStatus = "PENDING" | "CLONING" | "READY" | "ERROR";
 
 export interface Repository {
@@ -56,6 +58,7 @@ export interface Repository {
   investigationCount: number;
   createdAt: string; // ISO
   updatedAt: string; // ISO
+  // NOTE: no localPath / cloneUrl / tokens ever appear — don't expect them
 }
 
 export interface ConnectRepositoryBody {
