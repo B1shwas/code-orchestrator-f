@@ -63,7 +63,10 @@ export default function CodeRepoPage({
   }
 
   return (
-    <div className="flex w-full flex-1 flex-col gap-3 p-4 min-h-0 lg:h-screen lg:overflow-hidden">
+    // flex-none + definite viewport height: flex-basis no longer fights the
+    // height, so on desktop this box is exactly 100dvh and only the panes
+    // inside it scroll. Mobile keeps natural stacked page scroll.
+    <div className="flex w-full flex-1 flex-col gap-3 p-4 min-h-0 lg:h-dvh lg:flex-none lg:overflow-hidden">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <h1 className="text-headline-lg font-semibold tracking-tight">
           Code Browser
