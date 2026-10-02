@@ -8,7 +8,7 @@ import {
   displayNameForLang,
   getHighlightedHtml,
   languageForPath,
-  tagLines,
+  splitLines,
 } from "./highlight";
 import { formatBytes } from "@/lib/format";
 
@@ -17,47 +17,37 @@ export interface JumpTarget {
   nonce: number;
 }
 
-function Gutter({
-  count,
-  activeLine,
+/**
+ * One source line = one row. The number cell and the code cell live in the
+ * same flex row, so they can never desync — regardless of wrapping, fonts,
+ * or empty lines. Numbers stick to the left while code scrolls horizontally.
+ */
+function CodeRow({
+  number,
+  active,
+  children,
 }: {
-  count: number;
-  activeLine: number | null;
+  number: number;
+  active: boolean;
+  children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <div
-      aria-hidden="true"
-      className="sticky left-0 w-12 shrink-0 select-none bg-canvas pr-3 text-right"
-    >
-      {Array.from({ length: count }, (_, i) => i + 1).map((n) => (
-        <div
-          key={n}
-          className={cn(
-            "h-6 font-mono text-[13px] leading-6",
-            n === activeLine ? "text-primary" : "text-disabled",
-          )}
-        >
-          {n}
-        </div>
-      ))}
+    <div id={`L${number}`} className="flex min-h-6 w-max min-w-full">
+      <div
+        aria-hidden="true"
+        className={cn(
+          "sticky left-0 w-12 shrink-0 select-none bg-canvas pr-3 text-right font-mono text-[13px] leading-6",
+          active ? "text-primary" : "text-disabled",
+        )}
+      >
+        {number}
+      </div>
+      <div className="code-line min-w-0 flex-1 pr-4">{children}</div>
     </div>
   );
 }
 
-function PlainCode({ content }: { content: string }): React.JSX.Element {
-  return (
-    <pre className="whitespace-pre py-0 pr-4 font-mono text-[13px] leading-6 text-primary">
-      {content}
-    </pre>
-  );
-}
-
-/**
- * Gutter + highlighted code as one unit. The row count comes from the tagged
- * HTML itself, so numbers can never drift from rendered lines — in either
- * the loading (plain) or highlighted state.
- */
-function CodeGrid({
+function HighlightedGrid({
   content,
   lang,
   activeLine,
@@ -67,33 +57,44 @@ function CodeGrid({
   activeLine: number | null;
 }): React.JSX.Element {
   const raw = React.use(getHighlightedHtml(content, lang));
-  const { html, count } = React.useMemo(() => tagLines(raw), [raw]);
+  const lines = React.useMemo(() => splitLines(raw), [raw]);
+
+  // Shiki's shape changed? Render plain rows rather than misalign.
+  if (lines.length === 0) {
+    return <PlainGrid content={content} activeLine={activeLine} />;
+  }
   return (
-    <div className="flex w-max min-w-full">
-      <Gutter count={count} activeLine={activeLine} />
-      <div
-        className="code-view min-w-0 flex-1"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-    </div>
+    <>
+      {lines.map((lineHtml, i) => (
+        <CodeRow key={i} number={i + 1} active={i + 1 === activeLine}>
+          {lineHtml ? (
+            <span dangerouslySetInnerHTML={{ __html: lineHtml }} />
+          ) : null}
+        </CodeRow>
+      ))}
+    </>
   );
 }
 
-function LoadingGrid({ content }: { content: string }): React.JSX.Element {
-  const count = content.endsWith("\n")
-    ? content.split("\n").length - 1
-    : content.split("\n").length;
+function PlainGrid({
+  content,
+  activeLine,
+}: {
+  content: string;
+  activeLine: number | null;
+}): React.JSX.Element {
   return (
-    <div className="flex w-max min-w-full">
-      <Gutter count={Math.max(count, 1)} activeLine={null} />
-      <div className="min-w-0 flex-1">
-        <PlainCode content={content} />
-      </div>
-    </div>
+    <>
+      {content.split("\n").map((line, i) => (
+        <CodeRow key={i} number={i + 1} active={i + 1 === activeLine}>
+          {line || null}
+        </CodeRow>
+      ))}
+    </>
   );
 }
 
-/** VS Code-style file viewer — header, banners, gutter + highlighted code. */
+/** VS Code-style file viewer — header, banners, and the row-locked grid. */
 export function FileViewer({
   repoId,
   path,
@@ -113,7 +114,7 @@ export function FileViewer({
   const fileName = path.split("/").pop() ?? path;
   const activeLine = jump?.line ?? null;
 
-  // Outline click → scroll the tagged line into view with a flash.
+  // Outline click → scroll the row into view with a flash.
   // Pure DOM sync (no setState) — the legitimate use-case for an effect.
   React.useEffect(() => {
     if (!jump) return;
@@ -200,9 +201,13 @@ export function FileViewer({
           </p>
         ) : (
           <React.Suspense
-            fallback={<LoadingGrid content={content} />}
+            fallback={<PlainGrid content={content} activeLine={null} />}
           >
-            <CodeGrid content={content} lang={lang} activeLine={activeLine} />
+            <HighlightedGrid
+              content={content}
+              lang={lang}
+              activeLine={activeLine}
+            />
           </React.Suspense>
         )}
       </div>

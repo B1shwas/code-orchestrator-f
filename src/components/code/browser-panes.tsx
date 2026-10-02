@@ -63,7 +63,7 @@ export function BrowserPanes({ repo }: { repo: Repository }): React.JSX.Element 
 
       <section
         aria-label="Editor"
-        className="flex min-h-[24rem] flex-1 flex-col rounded-lg border border-border-default bg-surface-neutral min-h-0 overflow-hidden lg:min-h-0"
+        className="flex max-h-[70vh] min-h-[24rem] flex-1 flex-col rounded-lg border border-border-default bg-surface-neutral min-h-0 overflow-hidden lg:max-h-none lg:min-h-0"
       >
         <div className="flex h-10 shrink-0 items-center border-b border-border-default px-4">
           <Breadcrumb path={path} />

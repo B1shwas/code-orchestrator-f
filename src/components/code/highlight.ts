@@ -101,17 +101,23 @@ export function getHighlightedHtml(content: string, lang: string): Promise<strin
 }
 
 /**
- * Tag every rendered line with L1..LN so outline clicks can scroll to it.
- * Shiki emits one `<span class="line">` per line, in order.
+ * Split rendered HTML into one inner-HTML string per source line.
+ * Shiki emits exactly one `<span class="line">…</span>` per line, in order;
+ * token spans never cross line boundaries, so the line's own closing tag is
+ * always the last `</span>` in its chunk. Returns [] if the shape ever
+ * differs — callers fall back to plain-text rows instead of misaligning.
  */
-export function tagLines(html: string): { html: string; count: number } {
+export function splitLines(html: string): string[] {
   const parts = html.split('<span class="line">');
-  if (parts.length <= 1) return { html, count: 0 };
-  const tagged =
-    parts[0] +
-    parts
-      .slice(1)
-      .map((part, i) => `<span class="line" id="L${i + 1}">` + part)
-      .join("");
-  return { html: tagged, count: parts.length - 1 };
+  if (parts.length <= 1) return [];
+  const closeTag = "</span>";
+  return parts.slice(1).map((part) => {
+    let s = part;
+    const codeClose = s.lastIndexOf("</code>");
+    if (codeClose !== -1) s = s.slice(0, codeClose);
+    s = s.replace(/\n$/, "");
+    const ownClose = s.lastIndexOf(closeTag);
+    if (ownClose === -1) return "";
+    return s.slice(0, ownClose) + s.slice(ownClose + closeTag.length);
+  });
 }
