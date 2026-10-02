@@ -38,7 +38,7 @@ export function AuthCard({
   return (
     <div
       className={cn(
-        "relative w-full max-w-md rounded-lg border border-border-default bg-surface-neutral p-6 shadow-[0_8px_24px_-4px_rgba(0,0,0,0.65)] sm:p-8",
+        "relative w-full rounded-lg border border-border-default bg-surface-neutral p-6 shadow-[0_8px_24px_-4px_rgba(0,0,0,0.65)] sm:p-8",
         className,
       )}
     >
@@ -82,7 +82,5 @@ export function Stack({
   className?: string;
   gap?: string;
 }): React.JSX.Element {
-  return (
-    <div className={cn("flex flex-col", gap, className)}>{children}</div>
-  );
+  return <div className={cn("flex flex-col", gap, className)}>{children}</div>;
 }

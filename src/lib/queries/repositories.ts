@@ -30,12 +30,29 @@ export const repoKeys = {
     [...repoKeys.all, "github", page, perPage] as const,
 };
 
+export interface UseRepositoriesOptions {
+  enabled?: boolean;
+  /** Refetch the list while any repo is non-terminal (clone polling). */
+  poll?: boolean;
+}
+
 /** My linked repos, newest first. */
-export function useRepositories(enabled = true): UseQueryResult<Repository[]> {
+export function useRepositories(
+  options?: UseRepositoriesOptions,
+): UseQueryResult<Repository[]> {
+  const poll = options?.poll ?? false;
   return useQuery({
     queryKey: repoKeys.lists(),
     queryFn: listRepositories,
-    enabled,
+    enabled: options?.enabled ?? true,
+    refetchInterval: (query) => {
+      if (!poll) return false;
+      const data = query.state.data as Repository[] | undefined;
+      if (!data) return CLONE_POLL_INTERVAL_MS;
+      return data.some((repo) => !TERMINAL_STATUSES.includes(repo.status))
+        ? CLONE_POLL_INTERVAL_MS
+        : false;
+    },
   });
 }
 

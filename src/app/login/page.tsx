@@ -9,9 +9,7 @@ import { GithubIcon, WhycodeMark } from "@/components/icons";
 import type { ApiError } from "@/lib/api";
 
 function errorMessage(error: ApiError): string {
-  return Array.isArray(error.message)
-    ? error.message.join(" ")
-    : error.message;
+  return Array.isArray(error.message) ? error.message.join(" ") : error.message;
 }
 
 export default function LoginPage(): React.JSX.Element {
@@ -61,14 +59,14 @@ export default function LoginPage(): React.JSX.Element {
         }}
       />
 
-      <AuthCard>
+      <AuthCard className="max-w-[80%] lg:max-w-[50%]">
         <Stack className="items-center text-center" gap="gap-6">
           <Stack className="items-center" gap="gap-3">
             <WhycodeMark className="size-10" />
             <h1 className="text-headline-lg font-semibold tracking-tight text-primary">
               WhyCODE
             </h1>
-            <p className="max-w-xs text-body-md text-muted">
+            <p className="text-body-md text-muted">
               Understand any codebase. Ask questions, get answers with evidence.
             </p>
           </Stack>
