@@ -120,19 +120,33 @@ pre,
   letter-spacing: -0.01em;
 }
 
-/* Code viewer (shiki) — transparent canvas over a strict 24px line grid */
+/* Code viewer (shiki) — transparent canvas over a strict 24px line grid.
+   Every rendered line is exactly one 24px row: no wrap, no padding drift,
+   collapsed empty lines impossible — so the gutter can never desync. */
 .code-view pre.shiki {
   margin: 0;
+  padding: 0;
   background-color: transparent !important;
+  white-space: pre;
+  overflow-x: visible;
 }
 .code-view pre.shiki code {
   display: block;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 24px;
+  tab-size: 4;
 }
 .code-view .shiki .line {
   display: block;
+  min-height: 24px;
   font-size: 13px;
   line-height: 24px;
+  white-space: pre;
   padding-right: 1rem;
+}
+.code-view .shiki .line:empty::before {
+  content: "\00a0";
 }
 .code-view .line-flash {
   background-color: rgba(99, 102, 241, 0.18);

@@ -16,7 +16,13 @@ export function AuthGuard({
   const status = useAuthStore((s) => s.status);
   const loadUser = useAuthStore((s) => s.loadUser);
   const router = useRouter();
-  const [restoring, setRestoring] = React.useState(false);
+  // Token present at mount (restored from sessionStorage) → hold the
+  // redirect until restore finishes. Lazy init runs before any effect,
+  // so the redirect effect below can never fire first with stale state.
+  // Server-safe: the module token is always null during prerender.
+  const [restoring, setRestoring] = React.useState(
+    () => getAccessToken() !== null,
+  );
 
   // Survive a full-page refresh: the JWT persists in sessionStorage, so
   // re-hydrate the session before deciding to bounce to /login.

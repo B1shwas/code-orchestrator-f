@@ -17,16 +17,31 @@ export interface JumpTarget {
   nonce: number;
 }
 
-function HighlightedCode({
-  content,
-  lang,
+function Gutter({
+  count,
+  activeLine,
 }: {
-  content: string;
-  lang: string;
+  count: number;
+  activeLine: number | null;
 }): React.JSX.Element {
-  const html = React.use(getHighlightedHtml(content, lang));
-  const tagged = React.useMemo(() => tagLines(html).html, [html]);
-  return <div dangerouslySetInnerHTML={{ __html: tagged }} />;
+  return (
+    <div
+      aria-hidden="true"
+      className="sticky left-0 w-12 shrink-0 select-none bg-canvas pr-3 text-right"
+    >
+      {Array.from({ length: count }, (_, i) => i + 1).map((n) => (
+        <div
+          key={n}
+          className={cn(
+            "h-6 font-mono text-[13px] leading-6",
+            n === activeLine ? "text-primary" : "text-disabled",
+          )}
+        >
+          {n}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function PlainCode({ content }: { content: string }): React.JSX.Element {
@@ -34,6 +49,47 @@ function PlainCode({ content }: { content: string }): React.JSX.Element {
     <pre className="whitespace-pre py-0 pr-4 font-mono text-[13px] leading-6 text-primary">
       {content}
     </pre>
+  );
+}
+
+/**
+ * Gutter + highlighted code as one unit. The row count comes from the tagged
+ * HTML itself, so numbers can never drift from rendered lines — in either
+ * the loading (plain) or highlighted state.
+ */
+function CodeGrid({
+  content,
+  lang,
+  activeLine,
+}: {
+  content: string;
+  lang: string;
+  activeLine: number | null;
+}): React.JSX.Element {
+  const raw = React.use(getHighlightedHtml(content, lang));
+  const { html, count } = React.useMemo(() => tagLines(raw), [raw]);
+  return (
+    <div className="flex w-max min-w-full">
+      <Gutter count={count} activeLine={activeLine} />
+      <div
+        className="code-view min-w-0 flex-1"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </div>
+  );
+}
+
+function LoadingGrid({ content }: { content: string }): React.JSX.Element {
+  const count = content.endsWith("\n")
+    ? content.split("\n").length - 1
+    : content.split("\n").length;
+  return (
+    <div className="flex w-max min-w-full">
+      <Gutter count={Math.max(count, 1)} activeLine={null} />
+      <div className="min-w-0 flex-1">
+        <PlainCode content={content} />
+      </div>
+    </div>
   );
 }
 
@@ -54,12 +110,11 @@ export function FileViewer({
 
   const content = file.data?.content ?? null;
   const lang = languageForPath(path);
-  const lineCount = content ? content.split("\n").length : 0;
   const fileName = path.split("/").pop() ?? path;
   const activeLine = jump?.line ?? null;
 
   // Outline click → scroll the tagged line into view with a flash.
-  // DOM sync is the legitimate use-case for an effect (no setState inside).
+  // Pure DOM sync (no setState) — the legitimate use-case for an effect.
   React.useEffect(() => {
     if (!jump) return;
     const el = document.getElementById(`L${jump.line}`);
@@ -144,31 +199,11 @@ export function FileViewer({
             No content to display.
           </p>
         ) : (
-          <div className="flex w-max min-w-full">
-            <div
-              aria-hidden="true"
-              className="sticky left-0 w-12 shrink-0 select-none bg-canvas pr-3 text-right"
-            >
-              {Array.from({ length: lineCount }, (_, i) => i + 1).map(
-                (n) => (
-                  <div
-                    key={n}
-                    className={cn(
-                      "font-mono text-[13px] leading-6",
-                      n === activeLine ? "text-primary" : "text-disabled",
-                    )}
-                  >
-                    {n}
-                  </div>
-                ),
-              )}
-            </div>
-            <div className="code-view min-w-0 flex-1">
-              <React.Suspense fallback={<PlainCode content={content} />}>
-                <HighlightedCode content={content} lang={lang} />
-              </React.Suspense>
-            </div>
-          </div>
+          <React.Suspense
+            fallback={<LoadingGrid content={content} />}
+          >
+            <CodeGrid content={content} lang={lang} activeLine={activeLine} />
+          </React.Suspense>
         )}
       </div>
     </div>

@@ -18,7 +18,7 @@ function RepoRow({ repo }: { repo: Repository }): React.JSX.Element {
 
   function open(): void {
     selectRepository(repo.id);
-    if (repo.status === "READY") router.push("/code");
+    if (repo.status === "READY") router.push(`/code/${repo.id}`);
   }
 
   return (
