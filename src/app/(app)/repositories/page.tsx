@@ -6,6 +6,7 @@ import { ChevronRight, FolderGit2, GitBranch, Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { PageShell, Stack } from "@/components/layout";
 import { RepoStatusBadge } from "@/components/status-badge";
+import { ConnectRepoModal } from "@/components/connect-repo-modal";
 import { useRepositories } from "@/lib/queries/repositories";
 import { useUiStore } from "@/stores/ui-store";
 import { formatApiError, formatBytes, formatRelativeTime } from "@/lib/format";
@@ -93,6 +94,7 @@ export default function RepositoriesPage(): React.JSX.Element {
     poll: true,
   });
   const [filter, setFilter] = React.useState("");
+  const [connectOpen, setConnectOpen] = React.useState(false);
 
   const repos = data ?? [];
   const visible = repos.filter((repo) =>
@@ -134,10 +136,10 @@ export default function RepositoriesPage(): React.JSX.Element {
           <Button variant="secondary" disabled>
             Sync all
           </Button>
-          <Button disabled>
-            <Plus />
-            Connect repo
-          </Button>
+              <Button onClick={() => setConnectOpen(true)}>
+                <Plus />
+                Connect repo
+              </Button>
         </div>
       </div>
 
@@ -175,7 +177,7 @@ export default function RepositoriesPage(): React.JSX.Element {
               </p>
             </Stack>
             {repos.length === 0 && (
-              <Button disabled>
+              <Button onClick={() => setConnectOpen(true)}>
                 <Plus />
                 Connect repository
               </Button>
@@ -194,6 +196,8 @@ export default function RepositoriesPage(): React.JSX.Element {
           </ul>
         )}
       </section>
+
+      <ConnectRepoModal open={connectOpen} onOpenChange={setConnectOpen} />
     </PageShell>
   );
 }
