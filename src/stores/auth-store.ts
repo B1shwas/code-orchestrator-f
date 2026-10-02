@@ -9,6 +9,8 @@ import {
   type LoginResponse,
   type UserProfile,
 } from "@/lib/api";
+import { clearClientCache } from "@/lib/query-client";
+import { useUiStore } from "@/stores/ui-store";
 
 type AuthStatus = "anonymous" | "authenticating" | "authenticated";
 
@@ -35,6 +37,8 @@ interface AuthState {
   ) => Promise<void>;
   /** GET /auth/me — hydrate user on app boot when a session exists. */
   loadUser: () => Promise<void>;
+  /** Record a restore failure (e.g. timed out) without touching the session. */
+  restoreFailed: (message: string) => void;
   /** POST /auth/logout + discard JWT client-side. */
   logout: () => Promise<void>;
   /** Called by the api client's 401 interceptor. */
@@ -44,6 +48,19 @@ interface AuthState {
 
 function clearSession(): void {
   setAccessToken(null);
+}
+
+/**
+ * Full client-side reset for a dead session: token, every cached server
+ * response (keys are not user-scoped), and UI selection. Without this the
+ * next login renders the previous account's repos/investigations, and
+ * polling queries keep firing against the old session.
+ */
+function clearClientState(): void {
+  clearSession();
+  clearClientCache();
+  useUiStore.getState().selectRepository(null);
+  useUiStore.getState().setActiveInvestigation(null);
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => ({
@@ -114,19 +131,31 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
   },
 
+  restoreFailed: (message) => {
+    const state = get();
+    // Only speak up if nothing else already explained the failure
+    // (real errors set error via loadUser; expiry sets sessionExpired).
+    if (state.sessionExpired || state.status !== "anonymous" || state.error) {
+      return;
+    }
+    set({
+      error: { statusCode: 0, message, error: "RESTORE_TIMEOUT" },
+    });
+  },
+
   logout: async () => {
     try {
       await logoutRequest();
     } catch {
       // Stateless logout — a failing call must not block local discard.
     } finally {
-      clearSession();
+      clearClientState();
       set({ user: null, status: "anonymous", sessionExpired: false, error: null });
     }
   },
 
   handleUnauthorized: () => {
-    clearSession();
+    clearClientState();
     set({ user: null, status: "anonymous", sessionExpired: true });
   },
 
