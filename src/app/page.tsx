@@ -2,16 +2,17 @@ import { FolderGit2, Plus, Search } from "lucide-react";
 import { AuthGuard } from "@/components/auth-guard";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
+import { PageShell, Stack } from "@/components/layout";
 
 export default function Home(): React.JSX.Element {
   return (
     <AuthGuard>
       <div className="flex min-h-screen flex-col bg-canvas font-sans text-primary">
         <AppHeader />
-        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 py-6 sm:px-8">
+        <PageShell>
           {/* page head */}
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <Stack gap="gap-1">
               <div className="flex items-center gap-2">
                 <h1 className="text-headline-lg font-semibold tracking-tight">
                   Repositories
@@ -20,11 +21,10 @@ export default function Home(): React.JSX.Element {
                   0 active
                 </span>
               </div>
-              <p className="mt-1 text-body-md text-muted">
-                Connected codebases indexed for questions and evidence
-                tracing.
+              <p className="text-body-md text-muted">
+                Connected codebases indexed for questions and evidence tracing.
               </p>
-            </div>
+            </Stack>
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-disabled" />
@@ -49,17 +49,19 @@ export default function Home(): React.JSX.Element {
           </div>
 
           {/* content canvas */}
-          <section className="flex flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border-default bg-surface-neutral px-6 py-16 text-center">
+          <section className="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-border-default bg-surface-neutral px-6 py-20 text-center">
             <div className="flex size-12 items-center justify-center rounded-lg border border-border-default bg-surface-raised text-muted">
               <FolderGit2 className="size-5" />
             </div>
-            <h2 className="text-headline-md font-semibold tracking-tight">
-              Connect your first repository
-            </h2>
-            <p className="max-w-md text-body-md text-muted">
-              Index any public or private repo to trace code decisions with
-              evidence.
-            </p>
+            <Stack className="items-center" gap="gap-2">
+              <h2 className="text-headline-md font-semibold tracking-tight">
+                Connect your first repository
+              </h2>
+              <p className="max-w-md text-body-md text-muted">
+                Index any public or private repo to trace code decisions with
+                evidence.
+              </p>
+            </Stack>
             <Button disabled>
               <Plus />
               Connect repository
@@ -68,7 +70,7 @@ export default function Home(): React.JSX.Element {
               repositories UI lands in the next milestone
             </p>
           </section>
-        </main>
+        </PageShell>
       </div>
     </AuthGuard>
   );

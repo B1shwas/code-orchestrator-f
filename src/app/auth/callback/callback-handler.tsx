@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { AuthCard, CenteredScreen, Stack } from "@/components/layout";
 import { WhycodeMark } from "@/components/icons";
 import type { UserProfile } from "@/lib/api";
 
@@ -63,32 +63,30 @@ export function CallbackHandler(): React.JSX.Element {
   }, [searchParams, hydrateFromCallback, router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-canvas p-4">
-      <Card className="w-full max-w-sm">
-        <CardContent className="flex items-center gap-3 pt-4">
+    <CenteredScreen>
+      <AuthCard>
+        <Stack gap="gap-4">
           <WhycodeMark
-            className={`size-7 ${failed ? "" : "animate-pulse"}`}
+            className={`size-8 ${failed ? "" : "animate-pulse"}`}
           />
-          <div className="flex flex-col gap-2">
-            <p
-              role={failed ? "alert" : "status"}
-              className={`text-body-md ${failed ? "text-status-error" : "text-muted"}`}
+          <p
+            role={failed ? "alert" : "status"}
+            className={`text-body-md ${failed ? "text-status-error" : "text-muted"}`}
+          >
+            {message}
+          </p>
+          {failed && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="self-start"
+              onClick={() => router.replace("/login")}
             >
-              {message}
-            </p>
-            {failed && (
-              <Button
-                variant="secondary"
-                size="sm"
-                className="self-start"
-                onClick={() => router.replace("/login")}
-              >
-                Back to login
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+              Back to login
+            </Button>
+          )}
+        </Stack>
+      </AuthCard>
+    </CenteredScreen>
   );
 }

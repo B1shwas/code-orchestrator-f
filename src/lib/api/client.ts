@@ -11,16 +11,29 @@ const API_PREFIX = "/api/v1";
 
 // ---------------------------------------------------------------------------
 // Token + session-expiry wiring.
-// The JWT lives ONLY here (module memory) — never in zustand state, never in
-// localStorage (logout is a client-side discard). The auth store registers
-// itself via setUnauthorizedHandler; api modules never import stores, so
-// there are no import cycles.
+// The JWT lives in module memory + sessionStorage (cleared when the tab
+// closes) — never in zustand state, never in localStorage. The auth store
+// registers itself via setUnauthorizedHandler; api modules never import
+// stores, so there are no import cycles.
 // ---------------------------------------------------------------------------
+const TOKEN_KEY = "whycode_token";
 let accessToken: string | null = null;
 let unauthorizedHandler: (() => void) | null = null;
 
+// Restore from sessionStorage on module load (browser only).
+if (typeof window !== "undefined") {
+  accessToken = window.sessionStorage.getItem(TOKEN_KEY);
+}
+
 export function setAccessToken(token: string | null): void {
   accessToken = token;
+  if (typeof window !== "undefined") {
+    if (token) {
+      window.sessionStorage.setItem(TOKEN_KEY, token);
+    } else {
+      window.sessionStorage.removeItem(TOKEN_KEY);
+    }
+  }
 }
 
 export function getAccessToken(): string | null {
