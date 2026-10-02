@@ -119,3 +119,30 @@ pre,
   font-family: var(--font-mono);
   letter-spacing: -0.01em;
 }
+
+/* Code viewer (shiki) — transparent canvas over a strict 24px line grid */
+.code-view pre.shiki {
+  margin: 0;
+  background-color: transparent !important;
+}
+.code-view pre.shiki code {
+  display: block;
+}
+.code-view .shiki .line {
+  display: block;
+  font-size: 13px;
+  line-height: 24px;
+  padding-right: 1rem;
+}
+.code-view .line-flash {
+  background-color: rgba(99, 102, 241, 0.18);
+  animation: line-flash-fade 1.3s ease-out;
+}
+@keyframes line-flash-fade {
+  from {
+    background-color: rgba(99, 102, 241, 0.38);
+  }
+  to {
+    background-color: rgba(99, 102, 241, 0.12);
+  }
+}
